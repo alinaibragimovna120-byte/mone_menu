@@ -92,6 +92,9 @@ class CardStorage {
     await _done((await _table('readwrite')).delete(key.toJS));
   }
 
+  /// Байты фото (для отправки на сервер); null — фото нет.
+  Future<Uint8List?> readPhoto(String key) async => _photos[key];
+
   /// Настройки (язык интерфейса и т. п.) — отдельно от техкарт.
   Future<Map<String, dynamic>> loadSettings() async {
     try {

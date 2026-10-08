@@ -173,6 +173,36 @@ const _uz = <String, String>{
   'Ингредиент': 'Ingrediyent',
   'Примечания (каждое с новой строки)': 'Izohlar (har biri yangi qatordan)',
 
+  // сервер
+  'Сервер': 'Server',
+  'Вы вошли как {name}': '{name} sifatida kirdingiz',
+  'Отправлено на сервер: {n}': 'Serverga yuborildi: {n}',
+  'На сервере есть другие изменения': "Serverda boshqa o'zgarishlar bor",
+  'После вашей последней синхронизации меню на сервере изменили с другого устройства. Что оставить?':
+      "Oxirgi sinxronlashdan keyin serverdagi menyu boshqa qurilmadan o'zgartirilgan. Qaysi birini qoldiramiz?",
+  'Загрузить с сервера': 'Serverdan yuklash',
+  'Заменить моими': 'Meniki bilan almashtirish',
+  'Загрузить с сервера?': 'Serverdan yuklansinmi?',
+  'Техкарты на этом устройстве будут заменены версией с сервера.':
+      'Bu qurilmadagi texkartalar serverdagi nusxa bilan almashtiriladi.',
+  'Загрузить': 'Yuklash',
+  'Загружено с сервера: {n}': 'Serverdan yuklandi: {n}',
+  'Войдите тем же паролем, что и в приложении Mone, чтобы хранить техкарты на сервере и открывать их на других устройствах.':
+      "Texkartalarni serverda saqlash va boshqa qurilmalarda ochish uchun Mone ilovasidagi parol bilan kiring.",
+  'Пароль': 'Parol',
+  'Адрес сервера': 'Server manzili',
+  'Другой сервер': 'Boshqa server',
+  'Войти': 'Kirish',
+  'Ещё не синхронизировано': 'Hali sinxronlanmagan',
+  'Синхронизировано {date}': 'Sinxronlandi: {date}',
+  'Выйти': 'Chiqish',
+  'Отправить на сервер': 'Serverga yuborish',
+  'Все техкарты с этого устройства (и скрытые) вместе с фото сохранятся на сервере.':
+      'Bu qurilmadagi barcha texkartalar (yashirilganlari ham) rasmlari bilan serverda saqlanadi.',
+  'Отправлять техкарты на сервер могут админ и шеф. Вам доступна загрузка.':
+      "Texkartalarni serverga faqat admin va shef yubora oladi. Siz yuklab olishingiz mumkin.",
+  'Сервер — вход и синхронизация': 'Server — kirish va sinxronlash',
+
   // импорт
   'Формат .xls не поддерживается. Откройте файл в Excel → «Сохранить как» → «Книга Excel (*.xlsx)».':
       "«.xls» formati qo'llab-quvvatlanmaydi. Faylni Excel'da oching → «Boshqacha saqlash» → «Excel kitobi (*.xlsx)».",

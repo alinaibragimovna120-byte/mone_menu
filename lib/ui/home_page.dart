@@ -7,11 +7,13 @@ import 'package:provider/provider.dart';
 
 import 'models/tech_card.dart';
 import '../provider/menu_provider.dart';
+import '../services/menu_sync.dart';
 import 'all_books_page.dart';
 import 'book_page.dart';
 import 'card_photo.dart';
 import 'import_page.dart';
 import 'l10n.dart';
+import 'server_page.dart';
 import 'theme.dart';
 
 export 'l10n.dart' show plural;
@@ -108,6 +110,14 @@ class _Header extends StatelessWidget {
               ),
             ),
             const _LangSwitch(),
+            IconButton(
+              tooltip: tr('Сервер — вход и синхронизация'),
+              onPressed: () => openServerPage(context),
+              icon: Icon(
+                context.watch<MenuSync>().loggedIn ? Icons.cloud_done_outlined : Icons.cloud_outlined,
+                size: 26,
+              ),
+            ),
             if (books + deleted > 0)
               IconButton(
                 tooltip: tr('Все техкарты — выбрать, какие видны на главной'),

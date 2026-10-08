@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'provider/menu_provider.dart';
 import 'services/card_storage.dart';
+import 'services/menu_sync.dart';
 import 'ui/home_page.dart';
 import 'ui/l10n.dart';
 import 'ui/theme.dart';
@@ -14,16 +15,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final storage = CardStorage();
   final settings = await storage.loadSettings();
+  final menu = MenuProvider(storage)..load();
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => MenuProvider(storage)..load()),
+        ChangeNotifierProvider.value(value: menu),
         ChangeNotifierProvider(
           create: (_) => LangController(
             saved: settings['lang'] as String?,
-            onSave: (code) => storage.saveSettings({...settings, 'lang': code}),
+            // Свежие настройки: в них же хранится вход на сервер (MenuSync).
+            onSave: (code) async => storage.saveSettings({...await storage.loadSettings(), 'lang': code}),
           ),
         ),
+        ChangeNotifierProvider(create: (_) => MenuSync(storage: storage, menu: menu, settings: settings)),
       ],
       child: const MoneMenuApp(),
     ),

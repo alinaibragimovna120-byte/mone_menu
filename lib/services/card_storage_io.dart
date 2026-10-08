@@ -66,6 +66,12 @@ class CardStorage {
     if (await f.exists()) await f.delete();
   }
 
+  /// Байты фото (для отправки на сервер); null — файла нет.
+  Future<Uint8List?> readPhoto(String path) async {
+    final f = File(path);
+    return await f.exists() ? f.readAsBytes() : null;
+  }
+
   /// Картинка для показа фото по пути из [savePhoto].
   ImageProvider? photoImage(String path) => FileImage(File(path));
 

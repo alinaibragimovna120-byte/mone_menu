@@ -45,6 +45,24 @@ class MenuProvider extends ChangeNotifier {
 
   List<TechCard> cardsOf(String bookId) => _cards.where((c) => c.bookId == bookId).toList();
 
+  /// Все техкарты (и скрытые) и все позиции — для синхронизации с сервером.
+  List<TechBook> get allBooks => List.unmodifiable(_books);
+  List<TechCard> get allCards => List.unmodifiable(_cards);
+
+  /// Заменить все данные (загрузка с сервера). Фото, на которые больше никто
+  /// не ссылается, удаляются.
+  Future<void> replaceAll(List<TechBook> books, List<TechCard> cards) async {
+    final keep = {for (final c in cards) ...c.photos, for (final b in books) if (b.cover.isNotEmpty) b.cover};
+    final old = {for (final c in _cards) ...c.photos, for (final b in _books) if (b.cover.isNotEmpty) b.cover};
+    _books = [...books];
+    _cards = [...cards];
+    notifyListeners();
+    await _save();
+    for (final p in old.difference(keep)) {
+      await storage.deletePhoto(p);
+    }
+  }
+
   int countOf(String bookId) => _cards.where((c) => c.bookId == bookId).length;
 
   /// Обложка: выбранное фото или первое фото позиции.
