@@ -21,6 +21,22 @@ class _TempStorage extends CardStorage {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('пустое устройство — сразу встроенные техкарты с фото', () async {
+    final tmp = await Directory.systemTemp.createTemp('mone_menu_test');
+    addTearDown(() => tmp.delete(recursive: true));
+    final menu = MenuProvider(_TempStorage(tmp), seed: true);
+    await menu.load();
+    expect(menu.books, isNotEmpty);
+    expect(menu.allCards.where((c) => c.photos.isNotEmpty), isNotEmpty);
+    expect(File(menu.allCards.firstWhere((c) => c.photos.isNotEmpty).photos.first).existsSync(), isTrue);
+    // Второй запуск — с устройства, не заново из приложения.
+    final menu2 = MenuProvider(_TempStorage(tmp), seed: true);
+    await menu2.load();
+    expect(menu2.allCards.length, menu.allCards.length);
+  });
+
   test('parseFileName', () {
     final (title, number, date) = TechBook.parseFileName('№ 1 Тех карта Бар Чай Кофе 03.04.2026 (2).xlsx');
     expect(title, 'Бар Чай Кофе');

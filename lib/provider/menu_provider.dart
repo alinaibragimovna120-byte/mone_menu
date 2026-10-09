@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import '../ui/models/tech_card.dart';
 import '../services/card_storage.dart';
@@ -12,7 +13,11 @@ import '../services/xlsx_tech_card_parser.dart';
 
 class MenuProvider extends ChangeNotifier {
   final CardStorage storage;
-  MenuProvider(this.storage);
+  MenuProvider(this.storage, {this.seed = false});
+
+  /// Пустое устройство заполняется техкартами, встроенными в приложение
+  /// (assets/menu — tool/bundle_menu.ps1): видны сразу, без входа и интернета.
+  final bool seed;
 
   /// Вызывается после каждого изменения пользователем (не при загрузке и не
   /// при замене данными с сервера) — для автоотправки на сервер.
@@ -94,11 +99,45 @@ class MenuProvider extends ChangeNotifier {
     }).toList();
   }
 
+  /// Встроенные техкарты: фото копируются в хранилище устройства, дальше
+  /// техкарты — обычные (их можно менять). Нет встроенных — пусто.
+  Future<(List<TechBook>, List<TechCard>)> _bundled() async {
+    final Map<String, dynamic> data;
+    try {
+      data = jsonDecode(await rootBundle.loadString('assets/menu/cards.json')) as Map<String, dynamic>;
+    } catch (_) {
+      return (<TechBook>[], <TechCard>[]);
+    }
+    Future<String> photo(String? name) async {
+      if (name == null || name.isEmpty) return '';
+      try {
+        final bytes = await rootBundle.load('assets/menu/$name');
+        return await storage.savePhoto(bytes.buffer.asUint8List(), 'jpg');
+      } catch (_) {
+        return '';
+      }
+    }
+
+    final books = [
+      for (final j in (data['books'] as List).cast<Map<String, dynamic>>())
+        TechBook.fromJson({...j, 'cover': await photo(j['cover'] as String?)}),
+    ];
+    final cards = <TechCard>[];
+    for (final j in (data['cards'] as List).cast<Map<String, dynamic>>()) {
+      final photos = [for (final n in (j['photos'] as List? ?? []).cast<String>()) await photo(n)]
+        ..removeWhere((p) => p.isEmpty);
+      cards.add(TechCard.fromJson({...j, 'photos': photos}));
+    }
+    await storage.save(books, cards);
+    return (books, cards);
+  }
+
   Future<void> load() async {
     loading = true;
     notifyListeners();
     try {
-      final (books, cards) = await storage.load();
+      var (books, cards) = await storage.load();
+      if (seed && books.isEmpty && cards.isEmpty) (books, cards) = await _bundled();
       _books = books;
       _cards = cards;
       // Раньше id мог совпасть у нескольких позиций — выдаём повторам новые.

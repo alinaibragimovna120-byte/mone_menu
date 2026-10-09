@@ -15,7 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final storage = CardStorage();
   final settings = await storage.loadSettings();
-  final menu = MenuProvider(storage);
+  final menu = MenuProvider(storage, seed: true);
   final sync = MenuSync(storage: storage, menu: menu, settings: settings)..attach();
   // Техкарты с устройства сразу, затем — свежие с сервера (если вошли).
   menu.load().then((_) => sync.autoSync());
