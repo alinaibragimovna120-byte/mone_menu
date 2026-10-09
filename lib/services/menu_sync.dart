@@ -98,13 +98,15 @@ class MenuSync extends ChangeNotifier with WidgetsBindingObserver {
   /// техкарты остаются на устройстве, попробуем в следующий раз.
   Future<void> autoSync() async {
     _pushTimer?.cancel();
-    if (!loggedIn) return;
+    // Только что заполнено встроенными техкартами — своих изменений нет.
+    if (menu.seeded && _settings['server_dirty'] == null) await _saveSettings({'server_dirty': false});
     if (busy) {
       _pushTimer = Timer(const Duration(seconds: 3), autoSync);
       return;
     }
     try {
-      if (dirty && canEdit) {
+      // Читать меню можно без входа; отправлять — админ и шеф.
+      if (dirty && loggedIn && canEdit) {
         await push();
       } else if (!dirty || menu.allBooks.isEmpty) {
         await pull(onlyIfNewer: true);

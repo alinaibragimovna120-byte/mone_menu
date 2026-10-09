@@ -326,7 +326,7 @@ class _EmptyHome extends StatelessWidget {
             // Техкарты уже есть на сервере (добавлены на другом устройстве).
             TextButton.icon(
               onPressed: () async {
-                if (sync.loggedIn && context.read<MenuProvider>().allBooks.isEmpty) {
+                if (context.read<MenuProvider>().allBooks.isEmpty) {
                   await sync.pull().catchError((Object e) {
                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
                     return 0;

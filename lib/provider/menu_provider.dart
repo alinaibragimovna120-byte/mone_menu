@@ -19,6 +19,9 @@ class MenuProvider extends ChangeNotifier {
   /// (assets/menu — tool/bundle_menu.ps1): видны сразу, без входа и интернета.
   final bool seed;
 
+  /// В этот запуск устройство заполнено встроенными техкартами.
+  bool seeded = false;
+
   /// Вызывается после каждого изменения пользователем (не при загрузке и не
   /// при замене данными с сервера) — для автоотправки на сервер.
   VoidCallback? onChanged;
@@ -137,7 +140,10 @@ class MenuProvider extends ChangeNotifier {
     notifyListeners();
     try {
       var (books, cards) = await storage.load();
-      if (seed && books.isEmpty && cards.isEmpty) (books, cards) = await _bundled();
+      if (seed && books.isEmpty && cards.isEmpty) {
+        (books, cards) = await _bundled();
+        seeded = books.isNotEmpty;
+      }
       _books = books;
       _cards = cards;
       // Раньше id мог совпасть у нескольких позиций — выдаём повторам новые.

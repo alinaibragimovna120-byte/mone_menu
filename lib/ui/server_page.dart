@@ -132,6 +132,13 @@ class _ServerPageState extends State<ServerPage> {
                   icon: const Icon(Icons.login_rounded),
                   label: Text(tr('Войти')),
                 ),
+                const SizedBox(height: 10),
+                // Смотреть меню можно без входа.
+                OutlinedButton.icon(
+                  onPressed: sync.busy ? null : () => _pull(sync),
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: Text(tr('Загрузить с сервера')),
+                ),
               ] else ...[
                 SoftCard(
                   padding: const EdgeInsets.all(16),
