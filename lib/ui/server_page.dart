@@ -190,6 +190,11 @@ class _ServerPageState extends State<ServerPage> {
                   label: Text(tr('Загрузить с сервера')),
                 ),
               ],
+              const SizedBox(height: 28),
+              Center(
+                child: Text(tr('Версия {v}', {'v': appVersion}),
+                    style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+              ),
             ],
           ),
         ),

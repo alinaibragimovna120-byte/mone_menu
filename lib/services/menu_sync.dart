@@ -18,6 +18,9 @@ import 'card_storage.dart';
 
 const defaultServerUrl = 'https://moneapp.monebakeryuz.uz';
 
+/// Версия приложения — та же, что `version` в pubspec.yaml (меняются вместе).
+const appVersion = '1.1.0';
+
 /// Сервер изменён с другого устройства после нашей последней синхронизации.
 class MenuConflict implements Exception {
   final int serverRevision;
