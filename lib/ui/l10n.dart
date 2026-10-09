@@ -202,6 +202,8 @@ const _uz = <String, String>{
   'Отправлять техкарты на сервер могут админ и шеф. Вам доступна загрузка.':
       "Texkartalarni serverga faqat admin va shef yubora oladi. Siz yuklab olishingiz mumkin.",
   'Сервер — вход и синхронизация': 'Server — kirish va sinxronlash',
+  'Есть изменения, ещё не отправленные на сервер': "Serverga hali yuborilmagan o'zgarishlar bor",
+  'Загружаю техкарты с сервера…': 'Texkartalar serverdan yuklanmoqda…',
 
   // импорт
   'Формат .xls не поддерживается. Откройте файл в Excel → «Сохранить как» → «Книга Excel (*.xlsx)».':

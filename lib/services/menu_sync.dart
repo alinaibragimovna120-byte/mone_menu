@@ -5,9 +5,11 @@
 // На сервере количество хранится целым числом в тысячных: amount_milli
 // (7,5 гр → 7500) — правило проекта «float не сохраняется».
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import '../provider/menu_provider.dart';
@@ -30,7 +32,7 @@ class MenuSyncException implements Exception {
 }
 
 /// Состояние входа и синхронизации; хранится в настройках (settings.json).
-class MenuSync extends ChangeNotifier {
+class MenuSync extends ChangeNotifier with WidgetsBindingObserver {
   final CardStorage storage;
   final MenuProvider menu;
   final http.Client _http;
@@ -49,6 +51,69 @@ class MenuSync extends ChangeNotifier {
   int get revision => (_settings['server_revision'] as num?)?.toInt() ?? 0;
   DateTime? get lastSync => DateTime.tryParse(_settings['server_synced_at'] as String? ?? '');
   bool get loggedIn => token != null;
+
+  /// На устройстве есть изменения, которых нет на сервере. Если отметки ещё
+  /// нет (данные из версии без автосинхронизации) — считаем, что есть:
+  /// иначе загрузка с сервера затёрла бы их.
+  bool get dirty => (_settings['server_dirty'] as bool?) ?? menu.allBooks.isNotEmpty;
+
+  /// Автоотправка упёрлась в чужие изменения на сервере — выбрать на «Сервер».
+  bool conflict = false;
+
+  Timer? _pushTimer;
+  int _changes = 0;
+
+  /// Подписаться на изменения техкарт и сворачивание/открытие приложения.
+  void attach() {
+    menu.onChanged = _localChange;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _pushTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) autoSync();
+    // Свернули с неотправленным изменением — отправляем сразу.
+    if (state == AppLifecycleState.paused && (_pushTimer?.isActive ?? false)) autoSync();
+  }
+
+  void _localChange() {
+    _changes++;
+    if (_settings['server_dirty'] != true) _saveSettings({'server_dirty': true});
+    if (loggedIn && canEdit) {
+      _pushTimer?.cancel();
+      _pushTimer = Timer(const Duration(seconds: 3), autoSync);
+    }
+  }
+
+  /// Тихая синхронизация — при открытии приложения, возврате в него, после
+  /// входа и после изменений: свои изменения уходят на сервер (админ и шеф),
+  /// иначе подтягивается свежая версия с сервера. Ошибки не показываются —
+  /// техкарты остаются на устройстве, попробуем в следующий раз.
+  Future<void> autoSync() async {
+    _pushTimer?.cancel();
+    if (!loggedIn) return;
+    if (busy) {
+      _pushTimer = Timer(const Duration(seconds: 3), autoSync);
+      return;
+    }
+    try {
+      if (dirty && canEdit) {
+        await push();
+      } else if (!dirty || menu.allBooks.isEmpty) {
+        await pull(onlyIfNewer: true);
+      }
+    } on MenuConflict {
+      conflict = true;
+      notifyListeners();
+    } catch (_) {}
+  }
 
   /// Локальный путь фото → адрес на сервере ("/static/…").
   Map<String, String> get _photoUrls => Map<String, String>.from(_settings['photo_urls'] as Map? ?? {});
@@ -123,6 +188,7 @@ class MenuSync extends ChangeNotifier {
   /// Отправить все техкарты (и скрытые) на сервер. [force] — перезаписать,
   /// даже если там есть чужие изменения.
   Future<int> push({bool force = false}) => _run(() async {
+        final changes = _changes;
         final urls = _photoUrls;
         Future<String> upload(String path) async {
           if (path.isEmpty) return '';
@@ -157,7 +223,14 @@ class MenuSync extends ChangeNotifier {
           throw MenuSyncException(body['message'] as String? ?? 'Ошибка сервера ${r.statusCode}');
         }
         final rev = ((body['data'] as Map)['revision'] as num).toInt();
-        await _saveSettings({'server_revision': rev, 'server_synced_at': DateTime.now().toIso8601String()});
+        conflict = false;
+        await _saveSettings({
+          'server_revision': rev,
+          'server_synced_at': DateTime.now().toIso8601String(),
+          // Изменили, пока шла отправка, — отправим ещё раз.
+          'server_dirty': _changes != changes,
+        });
+        if (_changes != changes) _pushTimer = Timer(const Duration(seconds: 3), autoSync);
         return cards.length;
       });
 
@@ -177,8 +250,10 @@ class MenuSync extends ChangeNotifier {
 
   // ---------- загрузка ----------
 
-  /// Загрузить меню с сервера и заменить им локальные данные.
-  Future<int> pull() => _run(() async {
+  /// Загрузить меню с сервера и заменить им локальные данные. [onlyIfNewer] —
+  /// не трогать техкарты, если на сервере та же версия, что уже на устройстве.
+  Future<int> pull({bool onlyIfNewer = false}) => _run(() async {
+        final changes = _changes;
         final r = await _http.get(_u('/api/menu'), headers: _headers);
         final body = _decode(r);
         _checkAuth(r, body);
@@ -186,6 +261,8 @@ class MenuSync extends ChangeNotifier {
           throw MenuSyncException(body['message'] as String? ?? 'Ошибка сервера ${r.statusCode}');
         }
         final data = body['data'] as Map<String, dynamic>;
+        final serverRev = (data['revision'] as num).toInt();
+        if (onlyIfNewer && (serverRev == revision || (data['books'] as List).isEmpty)) return menu.allCards.length;
         final urls = _photoUrls;
         final byUrl = {for (final e in urls.entries) e.value: e.key};
         Future<String> local(String url) async {
@@ -210,13 +287,17 @@ class MenuSync extends ChangeNotifier {
             ..removeWhere((p) => p.isEmpty);
           cards.add(_cardFromServer(j, photos));
         }
+        // Пока скачивали, на устройстве что-то изменили — не затираем.
+        if (onlyIfNewer && _changes != changes) return menu.allCards.length;
         await menu.replaceAll(books, cards);
         urls.removeWhere((path, _) => !{for (final c in cards) ...c.photos, for (final b in books) b.cover}.contains(path));
         await _saveSettings({
           'photo_urls': urls,
-          'server_revision': (data['revision'] as num).toInt(),
+          'server_revision': serverRev,
           'server_synced_at': DateTime.now().toIso8601String(),
+          'server_dirty': false,
         });
+        conflict = false;
         return cards.length;
       });
 

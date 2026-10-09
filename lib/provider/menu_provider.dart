@@ -14,6 +14,10 @@ class MenuProvider extends ChangeNotifier {
   final CardStorage storage;
   MenuProvider(this.storage);
 
+  /// Вызывается после каждого изменения пользователем (не при загрузке и не
+  /// при замене данными с сервера) — для автоотправки на сервер.
+  VoidCallback? onChanged;
+
   List<TechBook> _books = [];
   List<TechCard> _cards = [];
   bool loading = true;
@@ -57,7 +61,7 @@ class MenuProvider extends ChangeNotifier {
     _books = [...books];
     _cards = [...cards];
     notifyListeners();
-    await _save();
+    await _persist();
     for (final p in old.difference(keep)) {
       await storage.deletePhoto(p);
     }
@@ -102,7 +106,7 @@ class MenuProvider extends ChangeNotifier {
       if (_cards.any((c) => !seen.add(c.id))) {
         seen.clear();
         _cards = [for (final c in _cards) seen.add(c.id) ? c : c.copyWith(id: newId())];
-        await _save();
+        await _persist();
       }
       // Опечатки из Excel («Завтрыки», «очищеный»…) — исправляем и в сохранённом.
       var typos = false;
@@ -125,7 +129,7 @@ class MenuProvider extends ChangeNotifier {
           typos = true;
         }
       }
-      if (typos) await _save();
+      if (typos) await _persist();
       // Похожие отделы в одной техкарте («Лимонад» / «Лимонады») — в один.
       final cats = <String, List<String>>{};
       var changed = false;
@@ -140,7 +144,7 @@ class MenuProvider extends ChangeNotifier {
           changed = true;
         }
       }
-      if (changed) await _save();
+      if (changed) await _persist();
       // Позиции из первой версии (без техкарты) — в отдельную техкарту.
       if (_cards.any((c) => bookById(c.bookId) == null)) {
         final misc = TechBook(id: newId(), title: 'Мои позиции', createdAt: DateTime.now());
@@ -148,7 +152,7 @@ class MenuProvider extends ChangeNotifier {
         _cards = [
           for (final c in _cards) bookById(c.bookId) == null ? c.copyWith(bookId: misc.id) : c,
         ];
-        await _save();
+        await _persist();
       }
     } finally {
       loading = false;
@@ -178,7 +182,14 @@ class MenuProvider extends ChangeNotifier {
   /// микросекунду, и одного времени не хватает).
   String newId() => '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}${(_idSeq++).toRadixString(36)}';
 
-  Future<void> _save() => storage.save(_books, _cards);
+  /// Записать на устройство (без отметки «изменено» — загрузка, данные с сервера).
+  Future<void> _persist() => storage.save(_books, _cards);
+
+  /// Записать изменение пользователя: [onChanged] отправит его на сервер.
+  Future<void> _save() async {
+    await _persist();
+    onChanged?.call();
+  }
 
   // ---------- техкарты (сборники) ----------
 

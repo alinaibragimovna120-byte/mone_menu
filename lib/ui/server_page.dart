@@ -44,6 +44,8 @@ class _ServerPageState extends State<ServerPage> {
         await sync.login(_url.text, _password.text);
         _password.clear();
         if (mounted) _toast(tr('Вы вошли как {name}', {'name': sync.userName}));
+        // Сразу подтянуть техкарты с сервера (или отправить свои).
+        await sync.autoSync();
       });
 
   Future<void> _push(MenuSync sync, {bool force = false}) => _guard(() async {
@@ -148,6 +150,12 @@ class _ServerPageState extends State<ServerPage> {
                                 }),
                           style: const TextStyle(color: AppColors.muted, fontSize: 12),
                         ),
+                        if (sync.conflict)
+                          Text(tr('На сервере есть другие изменения'),
+                              style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600))
+                        else if (sync.dirty)
+                          Text(tr('Есть изменения, ещё не отправленные на сервер'),
+                              style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                       ]),
                     ),
                     TextButton(onPressed: sync.busy ? null : sync.logout, child: Text(tr('Выйти'))),

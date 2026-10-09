@@ -15,7 +15,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final storage = CardStorage();
   final settings = await storage.loadSettings();
-  final menu = MenuProvider(storage)..load();
+  final menu = MenuProvider(storage);
+  final sync = MenuSync(storage: storage, menu: menu, settings: settings)..attach();
+  // Техкарты с устройства сразу, затем — свежие с сервера (если вошли).
+  menu.load().then((_) => sync.autoSync());
   runApp(
     MultiProvider(
       providers: [
@@ -27,7 +30,7 @@ Future<void> main() async {
             onSave: (code) async => storage.saveSettings({...await storage.loadSettings(), 'lang': code}),
           ),
         ),
-        ChangeNotifierProvider(create: (_) => MenuSync(storage: storage, menu: menu, settings: settings)),
+        ChangeNotifierProvider.value(value: sync),
       ],
       child: const MoneMenuApp(),
     ),

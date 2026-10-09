@@ -114,7 +114,12 @@ class _Header extends StatelessWidget {
               tooltip: tr('Сервер — вход и синхронизация'),
               onPressed: () => openServerPage(context),
               icon: Icon(
-                context.watch<MenuSync>().loggedIn ? Icons.cloud_done_outlined : Icons.cloud_outlined,
+                switch (context.watch<MenuSync>()) {
+                  MenuSync(busy: true) => Icons.cloud_sync_outlined,
+                  MenuSync(conflict: true) => Icons.sync_problem_outlined,
+                  MenuSync(loggedIn: true) => Icons.cloud_done_outlined,
+                  _ => Icons.cloud_outlined,
+                },
                 size: 26,
               ),
             ),
@@ -274,6 +279,16 @@ class _EmptyHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sync = context.watch<MenuSync>();
+    if (sync.busy) {
+      return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(tr('Загружаю техкарты с сервера…'), style: const TextStyle(color: AppColors.muted)),
+        ]),
+      );
+    }
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -306,6 +321,22 @@ class _EmptyHome extends StatelessWidget {
               onPressed: () => createBookManually(context),
               icon: const Icon(Icons.edit_note_rounded),
               label: Text(tr('Создать вручную')),
+            ),
+            const SizedBox(height: 10),
+            // Техкарты уже есть на сервере (добавлены на другом устройстве).
+            TextButton.icon(
+              onPressed: () async {
+                if (sync.loggedIn && context.read<MenuProvider>().allBooks.isEmpty) {
+                  await sync.pull().catchError((Object e) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                    return 0;
+                  });
+                } else {
+                  await openServerPage(context);
+                }
+              },
+              icon: const Icon(Icons.cloud_download_outlined),
+              label: Text(tr('Загрузить с сервера')),
             ),
             if (context.watch<MenuProvider>().deletedBooks.isNotEmpty) ...[
               const SizedBox(height: 10),
