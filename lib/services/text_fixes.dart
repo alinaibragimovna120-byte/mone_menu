@@ -149,3 +149,6 @@ CardVariant fixVariant(CardVariant v) => v.copyWith(
       ingredients: [for (final i in v.ingredients) i.copyWith(name: fixTypos(i.name))],
       notes: [for (final n in v.notes) fixTypos(n)],
     );
+
+/// Название техкарты — с заглавной буквы («коктейли» → «Коктейли»).
+String capFirst(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

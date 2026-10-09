@@ -74,11 +74,13 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final narrow = MediaQuery.sizeOf(context).width < 600;
     return SafeArea(
       bottom: false,
       child: Padding(
         padding: EdgeInsets.fromLTRB(homeGutter(context), 24, homeGutter(context), 20),
-        child: Row(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(
           children: [
             Container(
               width: 52,
@@ -97,7 +99,7 @@ class _Header extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Mone Menu',
+                  const Text('Mone Menu', maxLines: 1, softWrap: false, overflow: TextOverflow.fade,
                       style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   const SizedBox(height: 2),
                   Text(
@@ -109,7 +111,7 @@ class _Header extends StatelessWidget {
                 ],
               ),
             ),
-            const _LangSwitch(),
+            if (!narrow) const _LangSwitch(),
             IconButton(
               tooltip: tr('Сервер — вход и синхронизация'),
               onPressed: () => openServerPage(context),
@@ -130,7 +132,13 @@ class _Header extends StatelessWidget {
                 icon: const Icon(Icons.chevron_right_rounded, size: 32),
               ),
           ],
-        ),
+          ),
+          // На телефоне язык — отдельной строкой, иначе название не помещается.
+          if (narrow) ...[
+            const SizedBox(height: 14),
+            const _LangSwitch(),
+          ],
+        ]),
       ),
     );
   }

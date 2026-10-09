@@ -156,7 +156,7 @@ class MenuProvider extends ChangeNotifier {
       // Опечатки из Excel («Завтрыки», «очищеный»…) — исправляем и в сохранённом.
       var typos = false;
       for (var i = 0; i < _books.length; i++) {
-        final t = fixTypos(_books[i].title);
+        final t = capFirst(fixTypos(_books[i].title));
         if (t != _books[i].title) {
           _books[i] = _books[i].copyWith(title: t);
           typos = true;
@@ -241,7 +241,7 @@ class MenuProvider extends ChangeNotifier {
   Future<TechBook> createBook({required String title, String number = '', String date = '', String sourceFile = ''}) async {
     final book = TechBook(
       id: newId(),
-      title: title,
+      title: capFirst(title),
       number: number,
       date: date,
       sourceFile: sourceFile,
@@ -321,7 +321,7 @@ class MenuProvider extends ChangeNotifier {
     _books.add(archived);
     _cards = [for (final c in _cards) c.bookId == bookId ? c.copyWith(bookId: archived.id) : c];
     final (rawTitle, number, date) = TechBook.parseFileName(fileName);
-    final title = fixTypos(rawTitle);
+    final title = capFirst(fixTypos(rawTitle));
     final b = _books.indexWhere((x) => x.id == bookId);
     _books[b] = book.copyWith(title: title, number: number, date: date, cover: '', sourceFile: fileName);
     final cover = parsed.indexWhere((c) => c.images.isNotEmpty);
