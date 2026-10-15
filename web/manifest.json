@@ -1,12 +1,11 @@
 {
-    "name": "mone_menu",
-    "short_name": "mone_menu",
+    "name": "Mone Menu · Техкарты",
+    "short_name": "Mone Menu",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F5EFE8",
+    "theme_color": "#3B2A22",
+    "description": "Mone Menu — техкарты бара и кухни.",
     "prefer_related_applications": false,
     "icons": [
         {
@@ -31,5 +30,6 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "lang": "ru"
 }

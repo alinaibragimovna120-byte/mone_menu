@@ -1,17 +1,23 @@
-# mone_menu
+# Mone Menu
 
-A new Flutter project.
+Техкарты бара и кухни: Windows, Android, iOS и браузер.
 
-## Getting Started
+### iPhone / iPad без компьютера и App Store
 
-This project is a starting point for a Flutter application.
+Откройте в **Safari** на iPhone: <https://alinaibragimovna120-byte.github.io/mone_menu/>
 
-A few resources to get you started if this is your first Flutter project:
+Чтобы приложение было на экране как обычное: кнопка «Поделиться» → «На экран „Домой“».
+Оно откроется во весь экран, без адресной строки. Техкарты и фото хранятся на самом телефоне,
+в данных Safari; если очистить историю и данные сайтов, они удалятся (встроенные техкарты
+и данные с сервера загрузятся снова).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Веб-версия обновляется сама при каждой отправке изменений в `main`
+(один раз нужно включить: Settings → Pages → Source: GitHub Actions).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Сборка
+
+| Платформа | Команда |
+|---|---|
+| Windows | `flutter build windows` |
+| Android | `flutter build apk` |
+| Браузер / iPhone (PWA) | `flutter build web` |
