@@ -1,6 +1,8 @@
 // Импорт из Excel: выбрать файл → сразу создать новую техкарту
 // (название из имени файла, обложка — первое фото) или дополнить существующую.
 
+import 'dart:async';
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -9,6 +11,7 @@ import 'package:provider/provider.dart';
 
 import 'models/tech_card.dart';
 import '../provider/menu_provider.dart';
+import '../services/incoming_files.dart';
 import '../services/paste_files.dart';
 import '../services/text_fixes.dart';
 import '../services/xlsx_tech_card_parser.dart';
@@ -133,7 +136,8 @@ class _ExcelDropOptionState extends State<ExcelDropOption> {
   late final VoidCallback _stopPaste;
 
   // Подсказка про перетаскивание и Ctrl+V — там, где есть мышь и клавиатура.
-  static final _desktop = kIsWeb ||
+  // В браузере тоже по платформе: на iPhone и Android её нет.
+  static final _desktop =
       const {TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux}.contains(defaultTargetPlatform);
 
   @override
@@ -151,7 +155,7 @@ class _ExcelDropOptionState extends State<ExcelDropOption> {
   @override
   Widget build(BuildContext context) {
     final paste = defaultTargetPlatform == TargetPlatform.macOS ? '⌘V' : 'Ctrl+V';
-    return DropTarget(
+    final option = DropTarget(
       onDragEntered: (_) => setState(() => _over = true),
       onDragExited: (_) => setState(() => _over = false),
       onDragDone: (d) {
@@ -175,6 +179,109 @@ class _ExcelDropOptionState extends State<ExcelDropOption> {
           onTap: widget.onPick,
         ),
       ),
+    );
+    return _PhoneImportHint.shown
+        ? Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            option,
+            _PhoneImportHint(button: widget.title),
+          ])
+        : option;
+  }
+}
+
+/// Импортирует Excel-файлы, открытые в программе из Telegram и других
+/// приложений (Android: «Открыть с помощью» → Mone Menu).
+class IncomingFiles extends StatefulWidget {
+  final Widget child;
+
+  const IncomingFiles({super.key, required this.child});
+
+  @override
+  State<IncomingFiles> createState() => _IncomingFilesState();
+}
+
+class _IncomingFilesState extends State<IncomingFiles> {
+  late final VoidCallback _stop;
+
+  @override
+  void initState() {
+    super.initState();
+    _stop = listenIncomingFiles(_import);
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  Future<void> _import(String name, Uint8List bytes) async {
+    // Сначала дождаться техкарт с устройства, иначе загрузка затрёт новую.
+    final menu = context.read<MenuProvider>();
+    while (menu.loading) {
+      final done = Completer<void>();
+      void check() {
+        if (!menu.loading && !done.isCompleted) done.complete();
+      }
+      menu.addListener(check);
+      await done.future;
+      menu.removeListener(check);
+    }
+    if (mounted) await importExcelFile(context, name, () async => bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// Как добавить файл из Telegram на телефоне: на iPhone — через «Файлы»,
+/// на Android — сразу «Открыть с помощью» → Mone Menu.
+class _PhoneImportHint extends StatelessWidget {
+  final String button;
+
+  const _PhoneImportHint({required this.button});
+
+  static bool get iphone => kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get android => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  static bool get shown => iphone || android;
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = iphone
+        ? [
+            (Icons.ios_share, tr('В Telegram откройте файл и нажмите «Поделиться»')),
+            (Icons.folder_outlined, tr('Выберите «Сохранить в Файлы»')),
+            (Icons.table_view_rounded, tr('Здесь нажмите «{button}» — файл будет в «Недавних»', {'button': button})),
+          ]
+        : [
+            (Icons.touch_app_outlined, tr('В Telegram нажмите на файл')),
+            (Icons.open_in_new, tr('Выберите Mone Menu — техкарта загрузится сама')),
+          ];
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.line, width: 1.4),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(tr('Файл из Telegram'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+        for (final (i, (icon, text)) in steps.indexed)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(children: [
+              CircleAvatar(
+                radius: 11,
+                backgroundColor: AppColors.caramel,
+                child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 10),
+              Icon(icon, size: 18, color: AppColors.espresso),
+              const SizedBox(width: 8),
+              Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.3))),
+            ]),
+          ),
+      ]),
     );
   }
 }

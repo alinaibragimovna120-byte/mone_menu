@@ -218,6 +218,12 @@ const _uz = <String, String>{
   'Добавлено: {added}, обновлено: {updated}': "Qo'shildi: {added}, yangilandi: {updated}",
   'Отпустите файл здесь': "Faylni shu yerga qo'yib yuboring",
   '{subtitle}\nили перетащите файл сюда · {paste} — вставить': "{subtitle}\nyoki faylni shu yerga sudrab olib keling · {paste} — qo'yish",
+  'Файл из Telegram': "Telegram'dagi fayl",
+  'В Telegram откройте файл и нажмите «Поделиться»': "Telegram'da faylni oching va «Ulashish»ni bosing",
+  'Выберите «Сохранить в Файлы»': '«Fayllarga saqlash»ni tanlang',
+  'Здесь нажмите «{button}» — файл будет в «Недавних»': "Bu yerda «{button}»ni bosing — fayl «So'nggilar» bo'limida bo'ladi",
+  'В Telegram нажмите на файл': "Telegram'da faylni bosing",
+  'Выберите Mone Menu — техкарта загрузится сама': "Mone Menu'ni tanlang — texkarta o'zi yuklanadi",
 };
 
 /// Для отладки: перевод есть для каждой строки, которую просили перевести.

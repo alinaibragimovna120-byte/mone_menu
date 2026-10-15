@@ -8,6 +8,7 @@ import 'provider/menu_provider.dart';
 import 'services/card_storage.dart';
 import 'services/menu_sync.dart';
 import 'ui/home_page.dart';
+import 'ui/import_page.dart';
 import 'ui/l10n.dart';
 import 'ui/theme.dart';
 
@@ -52,7 +53,7 @@ class MoneMenuApp extends StatelessWidget {
       locale: Locale(lang.name),
       supportedLocales: const [Locale('ru'), Locale('uz')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const HomePage(),
+      home: const IncomingFiles(child: HomePage()),
     );
   }
 }
